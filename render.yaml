@@ -3,7 +3,7 @@ services:
     name: cliproxyapi
     runtime: docker
     plan: free
-    healthCheckPath: /v1/models
+    healthCheckPath: /health
     envVars:
       - key: DEPLOY
         value: cloud
