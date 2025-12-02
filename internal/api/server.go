@@ -348,7 +348,8 @@ func (s *Server) setupRoutes() {
 	})
 
 	// Health check endpoint for monitoring services (Uptime Robot, etc.)
-	s.engine.GET("/health", func(c *gin.Context) {
+	// Supports both GET and HEAD methods (Uptime Robot uses HEAD by default)
+	healthHandler := func(c *gin.Context) {
 		userAgent := c.GetHeader("User-Agent")
 		clientIP := c.ClientIP()
 
@@ -360,11 +361,13 @@ func (s *Server) setupRoutes() {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"status": "healthy",
-			"service": "CLIProxyAPI",
+			"status":    "healthy",
+			"service":   "CLIProxyAPI",
 			"timestamp": time.Now().UTC().Format(time.RFC3339),
 		})
-	})
+	}
+	s.engine.GET("/health", healthHandler)
+	s.engine.HEAD("/health", healthHandler)
 
 	s.engine.POST("/v1internal:method", geminiCLIHandlers.CLIHandler)
 
