@@ -337,6 +337,16 @@ func LoadConfigOptional(configFile string, optional bool) (*Config, error) {
 	// Normalize OAuth provider model exclusion map.
 	cfg.OAuthExcludedModels = NormalizeOAuthExcludedModels(cfg.OAuthExcludedModels)
 
+	// Check for API_KEYS environment variable (for cloud deployments like Render)
+	if envAPIKeys := os.Getenv("API_KEYS"); envAPIKeys != "" {
+		keys := strings.Split(envAPIKeys, ",")
+		for _, k := range keys {
+			if trimmed := strings.TrimSpace(k); trimmed != "" {
+				cfg.APIKeys = append(cfg.APIKeys, trimmed)
+			}
+		}
+	}
+
 	// Return the populated configuration struct.
 	return &cfg, nil
 }
