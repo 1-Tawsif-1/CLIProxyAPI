@@ -1038,6 +1038,39 @@ func (w *Watcher) SnapshotCoreAuths() []*coreauth.Auth {
 	out := make([]*coreauth.Auth, 0, 32)
 	now := time.Now()
 	idGen := newStableIDGenerator()
+
+	// Check for CODEX_TOKEN_JSON environment variable (for cloud deployments like Render)
+	if codexTokenJSON := os.Getenv("CODEX_TOKEN_JSON"); codexTokenJSON != "" {
+		var metadata map[string]any
+		if err := json.Unmarshal([]byte(codexTokenJSON), &metadata); err == nil {
+			if t, _ := metadata["type"].(string); t == "codex" || t == "" {
+				metadata["type"] = "codex"
+				provider := "codex"
+				label := provider
+				if email, _ := metadata["email"].(string); email != "" {
+					label = email
+				}
+				id := "env:codex-token"
+				a := &coreauth.Auth{
+					ID:       id,
+					Provider: provider,
+					Label:    label,
+					Status:   coreauth.StatusActive,
+					Attributes: map[string]string{
+						"source": "env:CODEX_TOKEN_JSON",
+					},
+					Metadata:  metadata,
+					CreatedAt: now,
+					UpdatedAt: now,
+				}
+				out = append(out, a)
+				log.Debugf("loaded codex token from CODEX_TOKEN_JSON environment variable")
+			}
+		} else {
+			log.Warnf("failed to parse CODEX_TOKEN_JSON environment variable: %v", err)
+		}
+	}
+
 	// Also synthesize auth entries for OpenAI-compatibility providers directly from config
 	w.clientsMutex.RLock()
 	cfg := w.config
