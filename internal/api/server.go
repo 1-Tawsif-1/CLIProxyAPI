@@ -346,6 +346,26 @@ func (s *Server) setupRoutes() {
 			},
 		})
 	})
+
+	// Health check endpoint for monitoring services (Uptime Robot, etc.)
+	s.engine.GET("/health", func(c *gin.Context) {
+		userAgent := c.GetHeader("User-Agent")
+		clientIP := c.ClientIP()
+
+		// Log Uptime Robot pings
+		if strings.Contains(strings.ToLower(userAgent), "uptimerobot") {
+			log.Infof("✓ Uptime Robot health check from %s", clientIP)
+		} else {
+			log.Debugf("Health check from %s (User-Agent: %s)", clientIP, userAgent)
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status": "healthy",
+			"service": "CLIProxyAPI",
+			"timestamp": time.Now().UTC().Format(time.RFC3339),
+		})
+	})
+
 	s.engine.POST("/v1internal:method", geminiCLIHandlers.CLIHandler)
 
 	// OAuth callback endpoints (reuse main server port)
