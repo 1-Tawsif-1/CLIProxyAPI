@@ -7,6 +7,7 @@ package watcher
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -1040,9 +1041,27 @@ func (w *Watcher) SnapshotCoreAuths() []*coreauth.Auth {
 	idGen := newStableIDGenerator()
 
 	// Check for CODEX_TOKEN_JSON environment variable (for cloud deployments like Render)
+	// Supports both plain JSON and base64-encoded JSON (auto-detected)
 	if codexTokenJSON := os.Getenv("CODEX_TOKEN_JSON"); codexTokenJSON != "" {
+		jsonData := codexTokenJSON
+		// Try base64 decode if it doesn't look like JSON
+		if !strings.HasPrefix(strings.TrimSpace(codexTokenJSON), "{") {
+			// Remove all whitespace (newlines, spaces, tabs) before decoding
+			// Render and other cloud platforms may add line breaks to long env vars
+			cleanedToken := strings.ReplaceAll(codexTokenJSON, "\n", "")
+			cleanedToken = strings.ReplaceAll(cleanedToken, "\r", "")
+			cleanedToken = strings.ReplaceAll(cleanedToken, " ", "")
+			cleanedToken = strings.ReplaceAll(cleanedToken, "\t", "")
+
+			if decoded, err := base64.StdEncoding.DecodeString(cleanedToken); err == nil {
+				jsonData = string(decoded)
+				log.Debugf("decoded base64 CODEX_TOKEN_JSON")
+			} else {
+				log.Warnf("failed to decode base64 CODEX_TOKEN_JSON: %v", err)
+			}
+		}
 		var metadata map[string]any
-		if err := json.Unmarshal([]byte(codexTokenJSON), &metadata); err == nil {
+		if err := json.Unmarshal([]byte(jsonData), &metadata); err == nil {
 			if t, _ := metadata["type"].(string); t == "codex" || t == "" {
 				metadata["type"] = "codex"
 				provider := "codex"
