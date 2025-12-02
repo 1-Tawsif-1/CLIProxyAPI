@@ -1040,9 +1040,21 @@ func (w *Watcher) SnapshotCoreAuths() []*coreauth.Auth {
 	now := time.Now()
 	idGen := newStableIDGenerator()
 
-	// Check for CODEX_TOKEN_JSON environment variable (for cloud deployments like Render)
+	// Check for CODEX_TOKEN_JSON environment variables (for cloud deployments like Render)
+	// Supports multiple accounts: CODEX_TOKEN_JSON, CODEX_TOKEN_JSON_2, ..., CODEX_TOKEN_JSON_8
 	// Supports both plain JSON and base64-encoded JSON (auto-detected)
-	if codexTokenJSON := os.Getenv("CODEX_TOKEN_JSON"); codexTokenJSON != "" {
+	codexEnvVars := []string{"CODEX_TOKEN_JSON"}
+	for i := 2; i <= 8; i++ {
+		codexEnvVars = append(codexEnvVars, fmt.Sprintf("CODEX_TOKEN_JSON_%d", i))
+	}
+
+	codexAccountsLoaded := 0
+	for _, envVar := range codexEnvVars {
+		codexTokenJSON := os.Getenv(envVar)
+		if codexTokenJSON == "" {
+			continue
+		}
+
 		jsonData := codexTokenJSON
 		// Try base64 decode if it doesn't look like JSON
 		if !strings.HasPrefix(strings.TrimSpace(codexTokenJSON), "{") {
@@ -1055,9 +1067,10 @@ func (w *Watcher) SnapshotCoreAuths() []*coreauth.Auth {
 
 			if decoded, err := base64.StdEncoding.DecodeString(cleanedToken); err == nil {
 				jsonData = string(decoded)
-				log.Debugf("decoded base64 CODEX_TOKEN_JSON")
+				log.Debugf("decoded base64 %s", envVar)
 			} else {
-				log.Warnf("failed to decode base64 CODEX_TOKEN_JSON: %v", err)
+				log.Warnf("failed to decode base64 %s: %v", envVar, err)
+				continue
 			}
 		}
 		var metadata map[string]any
@@ -1069,25 +1082,29 @@ func (w *Watcher) SnapshotCoreAuths() []*coreauth.Auth {
 				if email, _ := metadata["email"].(string); email != "" {
 					label = email
 				}
-				id := "env:codex-token"
+				id := fmt.Sprintf("env:codex-token:%s", envVar)
 				a := &coreauth.Auth{
 					ID:       id,
 					Provider: provider,
 					Label:    label,
 					Status:   coreauth.StatusActive,
 					Attributes: map[string]string{
-						"source": "env:CODEX_TOKEN_JSON",
+						"source": fmt.Sprintf("env:%s", envVar),
 					},
 					Metadata:  metadata,
 					CreatedAt: now,
 					UpdatedAt: now,
 				}
 				out = append(out, a)
-				log.Debugf("loaded codex token from CODEX_TOKEN_JSON environment variable")
+				codexAccountsLoaded++
+				log.Debugf("loaded codex token from %s environment variable", envVar)
 			}
 		} else {
-			log.Warnf("failed to parse CODEX_TOKEN_JSON environment variable: %v", err)
+			log.Warnf("failed to parse %s environment variable: %v", envVar, err)
 		}
+	}
+	if codexAccountsLoaded > 0 {
+		log.Infof("loaded %d codex account(s) from environment variables", codexAccountsLoaded)
 	}
 
 	// Also synthesize auth entries for OpenAI-compatibility providers directly from config
