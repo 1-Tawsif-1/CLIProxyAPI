@@ -5,13 +5,7 @@ services:
     plan: free
     healthCheckPath: /v1/models
     envVars:
-      - key: PORT
-        value: 8317
       - key: DEPLOY
         value: cloud
-      - key: GITSTORE_GIT_URL
-        sync: false
-      - key: GITSTORE_GIT_USERNAME
-        sync: false
-      - key: GITSTORE_GIT_TOKEN
+      - key: CODEX_TOKEN_JSON
         sync: false
