@@ -7,7 +7,7 @@ services:
     envVars:
       - key: DEPLOY
         value: cloud
-      # Multiple Codex accounts supported: CODEX_TOKEN_JSON, CODEX_TOKEN_JSON_2, ..., CODEX_TOKEN_JSON_8
+      # Multiple Codex accounts supported: CODEX_TOKEN_JSON, CODEX_TOKEN_JSON_2, ..., CODEX_TOKEN_JSON_16
       - key: CODEX_TOKEN_JSON
         sync: false
       - key: CODEX_TOKEN_JSON_2

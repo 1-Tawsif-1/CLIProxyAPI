@@ -1041,10 +1041,10 @@ func (w *Watcher) SnapshotCoreAuths() []*coreauth.Auth {
 	idGen := newStableIDGenerator()
 
 	// Check for CODEX_TOKEN_JSON environment variables (for cloud deployments like Render)
-	// Supports multiple accounts: CODEX_TOKEN_JSON, CODEX_TOKEN_JSON_2, ..., CODEX_TOKEN_JSON_8
+	// Supports multiple accounts: CODEX_TOKEN_JSON, CODEX_TOKEN_JSON_2, ..., CODEX_TOKEN_JSON_16
 	// Supports both plain JSON and base64-encoded JSON (auto-detected)
 	codexEnvVars := []string{"CODEX_TOKEN_JSON"}
-	for i := 2; i <= 8; i++ {
+	for i := 2; i <= 16; i++ {
 		codexEnvVars = append(codexEnvVars, fmt.Sprintf("CODEX_TOKEN_JSON_%d", i))
 	}
 
