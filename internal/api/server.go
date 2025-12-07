@@ -308,6 +308,7 @@ func NewServer(cfg *config.Config, authManager *auth.Manager, accessManager *sdk
 // It defines the endpoints and associates them with their respective handlers.
 func (s *Server) setupRoutes() {
 	s.engine.GET("/management.html", s.serveManagementControlPanel)
+	s.engine.GET("/account-monitor.html", s.mgmt.ServeAccountMonitorPage)
 	openaiHandlers := openai.NewOpenAIAPIHandler(s.handlers)
 	geminiHandlers := gemini.NewGeminiAPIHandler(s.handlers)
 	geminiCLIHandlers := gemini.NewGeminiCLIAPIHandler(s.handlers)
@@ -587,9 +588,6 @@ func (s *Server) registerManagementRoutes() {
 		mgmt.GET("/get-auth-status", s.mgmt.GetAuthStatus)
 		mgmt.GET("/accounts-monitor", s.mgmt.GetAccountsMonitor)
 	}
-
-	// Account monitor page (outside management group for easier access)
-	s.engine.GET("/account-monitor.html", s.mgmt.ServeAccountMonitorPage)
 }
 
 func (s *Server) managementAvailabilityMiddleware() gin.HandlerFunc {
