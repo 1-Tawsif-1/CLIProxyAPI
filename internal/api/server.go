@@ -585,7 +585,11 @@ func (s *Server) registerManagementRoutes() {
 		mgmt.GET("/iflow-auth-url", s.mgmt.RequestIFlowToken)
 		mgmt.POST("/iflow-auth-url", s.mgmt.RequestIFlowCookieToken)
 		mgmt.GET("/get-auth-status", s.mgmt.GetAuthStatus)
+		mgmt.GET("/accounts-monitor", s.mgmt.GetAccountsMonitor)
 	}
+
+	// Account monitor page (outside management group for easier access)
+	s.engine.GET("/account-monitor.html", s.mgmt.ServeAccountMonitorPage)
 }
 
 func (s *Server) managementAvailabilityMiddleware() gin.HandlerFunc {
